@@ -1,0 +1,46 @@
+# TCL 75C727 (TCL Google TV), Android 11
+# Apply: tools/disable.sh examples/tcl-75c727/debloat.txt   Undo: backup/<date>/restore.sh or tools/restore.sh <same file>
+# Everything is DISABLED for user 0, never uninstalled. Run tools/backup.sh first.
+# Kept on purpose: sideloading (package installer, file access), Chromecast, screen mirroring,
+# USB/LAN playback, HDMI inputs + eARC/CEC. com.tcl.tv stays enabled: it also handles HDMI inputs.
+# Packages that aren't on this TV just print an error and are skipped.
+
+# TCL telemetry, accounts and ads
+com.tcl.ttvs                       # TCL core service: BI analytics, Alexa bridge, account sync
+com.tcl.usercenter                 # TCL account / phone binding
+com.tcl.messagebox                 # TCL promo message popups
+com.tcl.esticker                   # on-screen promo stickers
+com.tcl.partnercustomizer          # partner app rows / promos for the stock launcher
+
+# TCL content tabs and channels
+com.tcl.channelplus                # "TCL Channel" app
+com.tcl.waterfall.overseas         # the "TCL" content tab
+com.tcl.tv.tclhome_passive
+
+# TCL background clutter
+com.tcl.guard                      # cleaner / "TV guard"
+com.tcl.notereminder
+com.tcl.hotelmenu                  # hotel mode
+com.tcl.MultiScreenInteraction_TV  # T-Cast (TCL's own casting app; Chromecast stays on)
+
+# Google extras
+com.google.android.apps.tv.dreamx  # ambient screensaver with recommendations (falls back to basic)
+com.google.android.videos          # Google TV / Play Movies
+com.google.android.play.games
+com.google.android.feedback
+android.autoinstalls.config.google.gtvpai   # silently installs promoted apps
+
+# Voice assistant (you said no): the mic button and voice search stop working
+com.google.android.katniss         # Google Assistant / voice search for TV
+com.google.android.speech.pumpkin  # offline hotword / speech model
+
+# Preinstalled apps you don't use (VLC and Kodi replace them)
+com.mxtech.videoplayer.television
+com.internet.tvbrowser
+
+# --- Never disable (needed for your features) ---
+# com.tcl.tv                          HDMI inputs + Live TV
+# com.google.android.apps.mediashell  Chromecast built-in
+# com.tcl.miracast                    screen mirroring
+# com.tcl.ui_mediaCenter, com.tcl.gallery   USB media
+# com.google.android.packageinstaller, com.android.documentsui   sideloading, file access
