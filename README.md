@@ -38,11 +38,12 @@ The prompt is short on purpose; Claude works out the details. The gotchas below 
 ./setup.sh                                                  # Python ADB client, JDK 17, Android SDK
 tools/find-tv.sh                                            # finds the TV, saves its IP
 tools/venv/bin/python -I tools/tv.py --probe                # model, Android version
+tools/backup.sh                                             # snapshot + backup/<date>/restore.sh
 tools/disable.sh examples/tcl-google-tv-g07/debloat.txt     # or your own list, see examples/
 launcher/build-and-install.sh                               # build + install the launcher
 ```
 
-Undo everything with `tools/restore.sh <the same list>`.
+Undo everything with `backup/<date>/restore.sh` (back to the exact snapshot) or `tools/restore.sh <the same list>`.
 
 ## What's here
 
@@ -54,6 +55,7 @@ Undo everything with `tools/restore.sh <the same list>`.
 | [tools/tv.py](tools/tv.py) | Pure-Python ADB client: shell, batch, screenshots, chunked APK push |
 | [tools/find-tv.sh](tools/find-tv.sh) | Finds Android TVs on your Wi-Fi |
 | [tools/type.sh](tools/type.sh) | Type into the TV's on-screen keyboard from your laptop (`tools/type.sh` alone prompts hidden, for passwords) |
+| [tools/backup.sh](tools/backup.sh) | Snapshot packages, home screen, settings and a screenshot; writes a matching restore script |
 | [tools/disable.sh](tools/disable.sh), [tools/restore.sh](tools/restore.sh) | Apply / undo a debloat list |
 | [examples/](examples/) | Debloat lists per TV model |
 
