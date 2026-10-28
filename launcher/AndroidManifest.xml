@@ -22,7 +22,7 @@
     </queries>
 
     <application
-        android:label="Home"
+        android:label="Accueil"
         android:icon="@drawable/ic_home"
         android:banner="@drawable/ic_home"
         android:allowBackup="false"

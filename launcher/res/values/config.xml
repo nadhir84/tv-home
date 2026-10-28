@@ -22,7 +22,7 @@
         <item>com.tcl.dashboard</item>
     </string-array>
 
-    <!-- The TV's Live TV / tuner app, listed last in the Inputs menu. Empty to leave it out.
+    <!-- The TV's Live TV / tuner app, listed first in the Inputs menu. Empty to leave it out.
          Common ones: com.tcl.tv (TCL), com.mediatek.wwtv.tvcenter (Xiaomi, many MediaTek sets),
          com.google.android.tv (Google Live Channels), com.sony.dtv.tvx (Sony). -->
     <string name="live_tv_package" translatable="false">com.tcl.tv</string>

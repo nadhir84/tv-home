@@ -259,7 +259,7 @@ public class MainActivity extends Activity {
         bottom.addView(dockRow, new LinearLayout.LayoutParams(-1, -2));
 
         appsLabel = text(11, "sans-serif-medium", 0x99FFFFFF);
-        appsLabel.setText("ALL APPS");
+        appsLabel.setText("TOUTES LES APPLIS");
         appsLabel.setLetterSpacing(0.22f);
         content.addView(appsLabel, llp(-2, -2, dp(68), dp(8), 0, dp(18)));
 
@@ -303,11 +303,11 @@ public class MainActivity extends Activity {
         LinearLayout right = new LinearLayout(this);
         right.setGravity(Gravity.CENTER_VERTICAL);
         right.setClipChildren(false);
-        TextView inputs = pill("Inputs", "⇥");
+        TextView inputs = pill("Sources", "⇥");
         inputs.setOnClickListener(v -> showInputs(v));
         wifiPill = pill("Wi-Fi", "◉");
         wifiPill.setOnClickListener(v -> launch(new Intent(Settings.ACTION_WIFI_SETTINGS)));
-        TextView settings = pill("Settings", "⚙");
+        TextView settings = pill("Paramètres", "⚙");
         settings.setOnClickListener(v -> launch(new Intent(Settings.ACTION_SETTINGS)));
         for (TextView p : new TextView[]{inputs, wifiPill, settings}) {
             right.addView(p, llp(-2, dp(30), dp(10), 0, 0, 0));
@@ -555,7 +555,13 @@ public class MainActivity extends Activity {
         if (tim != null) for (TvInputInfo t : tim.getTvInputList()) {
             if (t.isPassthroughInput() && !t.isHidden(this)) inputs.add(t);
         }
-        Collections.sort(inputs, (x, y) -> inputLabel(x).compareToIgnoreCase(inputLabel(y)));
+        // Live TV first, then HDMI 1…4, then the rest (AV)
+        if (isInstalled(liveTvPkg)) rows.add(inputRow("TV en direct", () -> openPackage(liveTvPkg)));
+        Collections.sort(inputs, (x, y) -> {
+            boolean hx = inputLabel(x).toUpperCase(Locale.ROOT).startsWith("HDMI");
+            boolean hy = inputLabel(y).toUpperCase(Locale.ROOT).startsWith("HDMI");
+            return hx != hy ? (hx ? -1 : 1) : inputLabel(x).compareToIgnoreCase(inputLabel(y));
+        });
         for (TvInputInfo t : inputs) {
             rows.add(inputRow(inputLabel(t), () -> {
                 Intent i = new Intent(Intent.ACTION_VIEW, TvContract.buildChannelUriForPassthroughInput(t.getId()));
@@ -563,10 +569,9 @@ public class MainActivity extends Activity {
                 if (!launch(i)) openPackage(inputPickerPkg);
             }));
         }
-        if (isInstalled(liveTvPkg)) rows.add(inputRow("Live TV", () -> openPackage(liveTvPkg)));
-        if (inputs.isEmpty() && isInstalled(inputPickerPkg)) rows.add(inputRow("All sources…", () -> openPackage(inputPickerPkg)));
+        if (inputs.isEmpty() && isInstalled(inputPickerPkg)) rows.add(inputRow("Toutes les sources…", () -> openPackage(inputPickerPkg)));
 
-        if (rows.isEmpty()) rows.add(inputRow("Settings", () -> launch(new Intent(Settings.ACTION_SETTINGS))));
+        if (rows.isEmpty()) rows.add(inputRow("Paramètres", () -> launch(new Intent(Settings.ACTION_SETTINGS))));
         for (TextView r : rows) {
             r.setOnClickListener(v -> { pw.dismiss(); ((Runnable) v.getTag()).run(); });
             list.addView(r, new LinearLayout.LayoutParams(-1, dp(36)));
@@ -616,7 +621,7 @@ public class MainActivity extends Activity {
     private void updateClock() {
         Calendar now = Calendar.getInstance();
         int h = now.get(Calendar.HOUR_OF_DAY);
-        greeting.setText(h < 5 ? "GOOD NIGHT" : h < 12 ? "GOOD MORNING" : h < 17 ? "GOOD AFTERNOON" : "GOOD EVENING");
+        greeting.setText(h < 5 ? "BONNE NUIT" : h < 12 ? "BONJOUR" : h < 18 ? "BON APRÈS-MIDI" : "BONSOIR");
         boolean is24 = android.text.format.DateFormat.is24HourFormat(this);
         clock.setText(new SimpleDateFormat(is24 ? "H:mm" : "h:mm", Locale.getDefault()).format(now.getTime()));
         ampm.setText(is24 ? "" : (h < 12 ? "AM" : "PM"));
@@ -636,7 +641,7 @@ public class MainActivity extends Activity {
             if (wm != null && wm.getConnectionInfo() != null) {
                 String s = wm.getConnectionInfo().getSSID();
                 if (s != null && !s.contains("unknown ssid")) name = s.replace("\"", "");
-                if (wm.getConnectionInfo().getNetworkId() == -1) name = "Offline";
+                if (wm.getConnectionInfo().getNetworkId() == -1) name = "Hors ligne";
             }
         } catch (SecurityException ignored) { }
         wifiPill.setText("◉  " + name);
