@@ -637,11 +637,15 @@ public class MainActivity extends Activity {
                 wifiPill.setText("◉  Ethernet");
                 return;
             }
+            // With location off, Android 11 hides the SSID and network id, so go by the active network
+            if (nc == null || !nc.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
+                wifiPill.setText("◉  Hors ligne");
+                return;
+            }
             WifiManager wm = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
             if (wm != null && wm.getConnectionInfo() != null) {
                 String s = wm.getConnectionInfo().getSSID();
                 if (s != null && !s.contains("unknown ssid")) name = s.replace("\"", "");
-                if (wm.getConnectionInfo().getNetworkId() == -1) name = "Hors ligne";
             }
         } catch (SecurityException ignored) { }
         wifiPill.setText("◉  " + name);
