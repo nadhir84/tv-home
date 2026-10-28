@@ -22,6 +22,8 @@ import android.graphics.drawable.GradientDrawable;
 import android.media.tv.TvContract;
 import android.media.tv.TvInputInfo;
 import android.media.tv.TvInputManager;
+import android.net.ConnectivityManager;
+import android.net.NetworkCapabilities;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Handler;
@@ -624,6 +626,12 @@ public class MainActivity extends Activity {
     private void updateWifi() {
         String name = "Wi-Fi";
         try {
+            ConnectivityManager cm = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+            NetworkCapabilities nc = cm == null ? null : cm.getNetworkCapabilities(cm.getActiveNetwork());
+            if (nc != null && nc.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) {
+                wifiPill.setText("◉  Ethernet");
+                return;
+            }
             WifiManager wm = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
             if (wm != null && wm.getConnectionInfo() != null) {
                 String s = wm.getConnectionInfo().getSSID();

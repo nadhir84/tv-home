@@ -6,7 +6,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 LIST="${1:?usage: tools/restore.sh <debloat list>}"
-PY="${PY:-tools/venv/bin/python}"
+. tools/env.sh
 STOCK_LAUNCHER="${STOCK_LAUNCHER:-com.google.android.apps.tv.launcherx/.home.HomeActivity}"
 {
   grep -vE '^\s*(#|$)' "$LIST" | awk '{print "pm enable " $1}'

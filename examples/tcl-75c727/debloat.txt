@@ -1,0 +1,36 @@
+# TCL 75C727 Google TV (device G05, "Smart TV Pro"), Android 11, build AR2101
+# Apply: tools/disable.sh examples/tcl-75c727/debloat.txt   Undo: tools/restore.sh <same file>
+# Everything is DISABLED for user 0, never uninstalled.
+# Based on examples/tcl-google-tv-g07, keeping Chromecast, screen mirroring, USB/file playback,
+# sideloading (packageinstaller, externalstorage, media/downloads providers) and HDMI/eARC/Dolby audio
+# (com.tcl.tv, com.tcl.tvinput, com.tcl.settings, com.tcl.system.server, com.dolby.android.audio.service).
+
+# TCL telemetry, accounts and ads
+com.tcl.ttvs                       # TCL core service: BI analytics, Alexa bridge, account sync
+com.tcl.usercenter                 # TCL account / phone binding
+com.tcl.messagebox                 # TCL promo message popups
+com.tcl.esticker                   # on-screen promo stickers
+com.tcl.partnercustomizer          # partner app rows / promos for the stock launcher
+
+# TCL content tabs and channels
+com.tcl.channelplus                # "TCL Channel" app
+com.tcl.waterfall.overseas         # the "TCL" content tab
+com.tcl.tv.tclhome_passive
+
+# TCL background clutter
+com.tcl.guard                      # cleaner / "TV guard"
+com.tcl.notereminder
+
+# Kept on purpose on this TV:
+# com.tcl.miracast                   # screen mirroring
+# com.tcl.MultiScreenInteraction_TV  # T-Cast (casting from TCL's phone app)
+# com.tcl.ui_mediaCenter             # USB media player
+# com.tcl.gallery                    # USB photo gallery
+# com.google.android.apps.mediashell # Chromecast built-in
+
+# Google extras
+com.google.android.apps.tv.dreamx  # ambient screensaver with recommendations (falls back to basic)
+com.google.android.videos          # Google TV / Play Movies
+com.google.android.play.games
+com.google.android.feedback
+android.autoinstalls.config.google.gtvpai   # silently installs promoted apps

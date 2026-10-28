@@ -44,6 +44,15 @@ launcher/build-and-install.sh                               # build + install th
 
 Undo everything with `tools/restore.sh <the same list>`.
 
+## Do it by hand (Windows)
+
+Install with `winget install Python.Python.3.12 Microsoft.OpenJDK.17 Google.PlatformTools`, unzip
+Google's [command-line tools](https://developer.android.com/studio#command-line-tools-only) to
+`%LOCALAPPDATA%\Android\Sdk\cmdline-tools\latest` and run its `sdkmanager "platforms;android-34" "build-tools;34.0.0"`.
+Create the venv with `python -m venv tools\venv` and `tools\venv\Scripts\pip install -r tools\requirements.txt`,
+put the TV's IP in `tools/.tv_host`, then run the scripts above from Git Bash (`tools/env.sh` finds
+everything). `tools/backup.sh` snapshots the package state first.
+
 ## What's here
 
 | Path | What it is |
