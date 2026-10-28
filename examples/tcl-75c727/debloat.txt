@@ -4,9 +4,14 @@
 # Based on examples/tcl-google-tv-g07, keeping Chromecast, screen mirroring, USB/file playback,
 # sideloading (packageinstaller, externalstorage, media/downloads providers) and HDMI/eARC/Dolby audio
 # (com.tcl.tv, com.tcl.tvinput, com.tcl.settings, com.tcl.system.server, com.dolby.android.audio.service).
+# USB: with USB debugging on, a reboot leaves the USB port in gadget mode (sys.usb.config=adb, Mstar-udc):
+# USB drives don't mount and a USB Ethernet adapter gets power but no link. Turn USB debugging off and
+# reboot when you're done; it is also what opens ADB port 5555, so turn it back on for the next session.
 
 # TCL telemetry, accounts and ads
-com.tcl.ttvs                       # TCL core service: BI analytics, Alexa bridge, account sync
+# com.tcl.ttvs                     # KEEP: on AR2101 the system updater lives here (SystemUpdateActivity,
+                                   # "Mise à jour locale"); disabling it stops OTA. It re-enables
+                                   # com.tcl.usercenter and com.tcl.esticker at boot: re-run this list after a reboot.
 com.tcl.usercenter                 # TCL account / phone binding
 com.tcl.messagebox                 # TCL promo message popups
 com.tcl.esticker                   # on-screen promo stickers
