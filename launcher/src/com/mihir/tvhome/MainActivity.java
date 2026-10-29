@@ -35,6 +35,7 @@ import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewConfiguration;
 import android.view.ViewOutlineProvider;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.OvershootInterpolator;
@@ -64,7 +65,11 @@ import java.util.Set;
 public class MainActivity extends Activity {
 
     // Dock, hidden apps, Live TV and grid width come from res/values/config.xml.
-    private String[] dockApps;
+    // The dock can be edited from the remote (hold OK on a tile); the edited order is saved in preferences.
+    private final List<String> dockApps = new ArrayList<>();
+    static final int MAX_DOCK = 8;
+    private String focusPkg;
+    private boolean okHeld;
     private final Set<String> hidden = new HashSet<>();
     private String liveTvPkg, inputPickerPkg;
     private int cols;
@@ -115,7 +120,8 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle b) {
         super.onCreate(b);
-        dockApps = getResources().getStringArray(R.array.dock_apps);
+        String saved = getPreferences(MODE_PRIVATE).getString("dock", null);
+        dockApps.addAll(Arrays.asList(saved != null ? saved.split(",") : getResources().getStringArray(R.array.dock_apps)));
         hidden.addAll(Arrays.asList(getResources().getStringArray(R.array.hidden_apps)));
         hidden.add(getPackageName());
         liveTvPkg = getString(R.string.live_tv_package);
@@ -259,7 +265,7 @@ public class MainActivity extends Activity {
         bottom.addView(dockRow, new LinearLayout.LayoutParams(-1, -2));
 
         appsLabel = text(11, "sans-serif-medium", 0x99FFFFFF);
-        appsLabel.setText("TOUTES LES APPLIS");
+        appsLabel.setText("TOUTES LES APPLIS  ·  MAINTENIR OK POUR MODIFIER LE DOCK");
         appsLabel.setLetterSpacing(0.22f);
         content.addView(appsLabel, llp(-2, -2, dp(68), dp(8), 0, dp(18)));
 
@@ -403,6 +409,13 @@ public class MainActivity extends Activity {
 
         if (!dock.isEmpty()) { title.setText(dock.get(0).label); setGlow(dock.get(0).color); }
         View last = lastFocusedId == View.NO_ID ? null : findViewById(lastFocusedId);
+        // After a dock edit, follow the app that moved.
+        if (focusPkg != null) {
+            List<View> all = new ArrayList<>(dockCards);
+            all.addAll(gridCards);
+            for (View c : all) if (((App) c.getTag()).pkg.equals(focusPkg)) last = c;
+            focusPkg = null;
+        }
         if (last != null) last.requestFocus();
         else if (!dockCards.isEmpty()) dockCards.get(0).requestFocus();
     }
@@ -538,16 +551,6 @@ public class MainActivity extends Activity {
     // ---------------------------------------------------------------- inputs
 
     private void showInputs(View anchor) {
-        LinearLayout list = new LinearLayout(this);
-        list.setOrientation(LinearLayout.VERTICAL);
-        list.setPadding(dp(8), dp(8), dp(8), dp(8));
-        GradientDrawable bg = new GradientDrawable();
-        bg.setCornerRadius(dp(16));
-        bg.setColor(0xF02A2A2E);
-        bg.setStroke(dp(1), 0x26FFFFFF);
-        list.setBackground(bg);
-
-        PopupWindow pw = new PopupWindow(list, dp(200), -2, true);
         List<TextView> rows = new ArrayList<>();
 
         TvInputManager tim = (TvInputManager) getSystemService(TV_INPUT_SERVICE);
@@ -572,6 +575,56 @@ public class MainActivity extends Activity {
         if (inputs.isEmpty() && isInstalled(inputPickerPkg)) rows.add(inputRow("Toutes les sources…", () -> openPackage(inputPickerPkg)));
 
         if (rows.isEmpty()) rows.add(inputRow("Paramètres", () -> launch(new Intent(Settings.ACTION_SETTINGS))));
+        showMenu(anchor, rows, dp(200), false);
+    }
+
+    /** Hold OK on a tile: add it to the dock, or move / remove it there. */
+    private void showAppMenu(View anchor, App app, boolean inDock) {
+        List<TextView> rows = new ArrayList<>();
+        if (!inDock) {
+            if (dockCards.size() < MAX_DOCK) rows.add(inputRow("Ajouter au dock", () -> editDock(app.pkg, d -> d.add(app.pkg))));
+            else rows.add(inputRow("Dock plein (" + MAX_DOCK + " applis max)", () -> { }));
+        } else {
+            int k = dockCards.indexOf(anchor);
+            if (k > 0) {
+                String prev = ((App) dockCards.get(k - 1).getTag()).pkg;
+                rows.add(inputRow("Déplacer à gauche", () -> editDock(app.pkg,
+                        d -> Collections.swap(d, d.indexOf(app.pkg), d.indexOf(prev)))));
+            }
+            if (k < dockCards.size() - 1) {
+                String next = ((App) dockCards.get(k + 1).getTag()).pkg;
+                rows.add(inputRow("Déplacer à droite", () -> editDock(app.pkg,
+                        d -> Collections.swap(d, d.indexOf(app.pkg), d.indexOf(next)))));
+            }
+            rows.add(inputRow("Retirer du dock", () -> editDock(app.pkg, d -> d.remove(app.pkg))));
+            rows.add(inputRow("Rétablir le dock par défaut", () -> editDock(null, d -> {
+                d.clear();
+                d.addAll(Arrays.asList(getResources().getStringArray(R.array.dock_apps)));
+            })));
+        }
+        // The dock sits at the bottom of the screen, so its menu opens above the tile.
+        showMenu(anchor, rows, dp(260), inDock);
+    }
+
+    private void editDock(String focus, java.util.function.Consumer<List<String>> change) {
+        change.accept(dockApps);
+        getPreferences(MODE_PRIVATE).edit().putString("dock", String.join(",", dockApps)).apply();
+        focusPkg = focus;
+        lastFocusedId = View.NO_ID;
+        buildApps();
+    }
+
+    private void showMenu(View anchor, List<TextView> rows, int width, boolean above) {
+        LinearLayout list = new LinearLayout(this);
+        list.setOrientation(LinearLayout.VERTICAL);
+        list.setPadding(dp(8), dp(8), dp(8), dp(8));
+        GradientDrawable bg = new GradientDrawable();
+        bg.setCornerRadius(dp(16));
+        bg.setColor(0xF02A2A2E);
+        bg.setStroke(dp(1), 0x26FFFFFF);
+        list.setBackground(bg);
+
+        PopupWindow pw = new PopupWindow(list, width, -2, true);
         for (TextView r : rows) {
             r.setOnClickListener(v -> { pw.dismiss(); ((Runnable) v.getTag()).run(); });
             list.addView(r, new LinearLayout.LayoutParams(-1, dp(36)));
@@ -587,7 +640,12 @@ public class MainActivity extends Activity {
         pw.setElevation(dp(16));
         pw.setOnDismissListener(() -> { inputsPopup = null; anchor.requestFocus(); });
         inputsPopup = pw;
-        pw.showAsDropDown(anchor, 0, dp(8), Gravity.START);
+        int yoff = dp(8);
+        if (above) {
+            list.measure(View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY), View.MeasureSpec.UNSPECIFIED);
+            yoff = -(anchor.getHeight() + list.getMeasuredHeight() + dp(16));
+        }
+        pw.showAsDropDown(anchor, 0, yoff, Gravity.START);
         rows.get(0).requestFocus();
     }
 
@@ -845,6 +903,24 @@ public class MainActivity extends Activity {
         // Menu key on the remote opens the Inputs dropdown.
         if (e.getKeyCode() == KeyEvent.KEYCODE_MENU && e.getAction() == KeyEvent.ACTION_UP && !pills.isEmpty()) {
             showInputs(pills.get(0));
+            return true;
+        }
+        // OK on a tile: a short press opens the app, holding it opens the dock menu. Handled here rather
+        // than with a long-click listener, which TV remotes trigger unreliably (the click fired instead).
+        int k = e.getKeyCode();
+        View f = getCurrentFocus();
+        if ((k == KeyEvent.KEYCODE_DPAD_CENTER || k == KeyEvent.KEYCODE_ENTER) && f != null && f.getTag() instanceof App) {
+            if (e.getAction() == KeyEvent.ACTION_DOWN) {
+                if (e.getRepeatCount() == 0) okHeld = false;
+                else if (!okHeld && (e.isLongPress()
+                        || e.getEventTime() - e.getDownTime() >= ViewConfiguration.getLongPressTimeout())) {
+                    okHeld = true;
+                    showAppMenu(f, (App) f.getTag(), dockCards.contains(f));
+                }
+            } else if (e.getAction() == KeyEvent.ACTION_UP) {
+                if (!okHeld && !e.isCanceled()) f.performClick();
+                okHeld = false;
+            }
             return true;
         }
         return super.dispatchKeyEvent(e);
