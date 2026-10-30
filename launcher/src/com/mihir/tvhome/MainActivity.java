@@ -24,6 +24,7 @@ import android.media.tv.TvInputInfo;
 import android.media.tv.TvInputManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkCapabilities;
+import android.net.Uri;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Handler;
@@ -559,7 +560,7 @@ public class MainActivity extends Activity {
             if (t.isPassthroughInput() && !t.isHidden(this)) inputs.add(t);
         }
         // Live TV first, then HDMI 1…4, then the rest (AV)
-        if (isInstalled(liveTvPkg)) rows.add(inputRow("TV en direct", () -> openPackage(liveTvPkg)));
+        if (isInstalled(liveTvPkg)) rows.add(inputRow("TV en direct", this::openLiveTv));
         Collections.sort(inputs, (x, y) -> {
             boolean hx = inputLabel(x).toUpperCase(Locale.ROOT).startsWith("HDMI");
             boolean hy = inputLabel(y).toUpperCase(Locale.ROOT).startsWith("HDMI");
@@ -602,6 +603,10 @@ public class MainActivity extends Activity {
                 d.addAll(Arrays.asList(getResources().getStringArray(R.array.dock_apps)));
             })));
         }
+        // A launcher can't force-stop other apps (system-only permission): open the app's page in
+        // Settings, where "Forcer l'arrêt" stops all its processes, foreground services included.
+        rows.add(inputRow("Forcer l'arrêt…", () -> launch(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                Uri.parse("package:" + app.pkg)))));
         // The dock sits at the bottom of the screen, so its menu opens above the tile.
         showMenu(anchor, rows, dp(260), inDock);
     }
@@ -647,6 +652,20 @@ public class MainActivity extends Activity {
         }
         pw.showAsDropDown(anchor, 0, yoff, Gravity.START);
         rows.get(0).requestFocus();
+    }
+
+    /** Tune the built-in tuner: opening the Live TV app alone resumes the last source (AV, HDMI…). */
+    private void openLiveTv() {
+        TvInputManager tim = (TvInputManager) getSystemService(TV_INPUT_SERVICE);
+        if (tim != null) for (TvInputInfo t : tim.getTvInputList()) {
+            // Hardware inputs have "/HW<id>" ids; this skips apps' own tuner-type inputs (VLC's preview).
+            if (t.getType() != TvInputInfo.TYPE_TUNER || !t.getId().contains("/HW")) continue;
+            Intent i = new Intent(Intent.ACTION_VIEW)
+                    .setDataAndType(TvContract.buildChannelsUriForInput(t.getId()), "vnd.android.cursor.dir/channel")
+                    .setPackage(liveTvPkg);
+            if (launch(i)) return;
+        }
+        openPackage(liveTvPkg);
     }
 
     private String inputLabel(TvInputInfo t) {
